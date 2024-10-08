@@ -1,0 +1,77 @@
+#include <Servo.h> 
+
+// Define os pinos Trig e Echo do sensor ultrassônico
+const int trigPin = 11;
+const int echoPin = 10;
+const int buzzerPin = 13; // Define o pino do buzzer
+// Variáveis para a duração e a distância
+long duration;
+int distance;
+
+Servo myServo; // Cria um objeto servo para controlar o servo motor
+
+void setup() {
+  pinMode(trigPin, OUTPUT); 
+  pinMode(echoPin, INPUT);
+  pinMode(buzzerPin, OUTPUT); // Define o pino do buzzer como saída
+  Serial.begin(9600);
+  myServo.attach(12); // Define em qual pino o Servo Motor está conectado
+}
+
+void loop() {
+  // Gira o Servo Motor de 15 a 165 graus
+  for(int i = 15; i <= 165; i++){  
+    myServo.write(i);
+    delay(30);
+    distance = calculateDistance(); // Chama uma função para calcular a distância medida pelo sensor ultrassônico para cada grau
+    
+    Serial.print("Grau: ");
+    Serial.print(i);
+    Serial.print(", Distância: ");
+    Serial.println(distance);
+
+    controlBuzzer(distance); // Controla o som do buzzer baseado na distância
+  }
+  
+  // Repete as linhas anteriores de 165 a 15 graus
+  for(int i = 165; i > 15; i--){  
+    myServo.write(i);
+    delay(30);
+    distance = calculateDistance();
+    
+    Serial.print("Grau: ");
+    Serial.print(i);
+    Serial.print(", Distância: ");
+    Serial.println(distance);
+
+    controlBuzzer(distance); // Controla o som do buzzer baseado na distância
+  }
+}
+
+// Função para calcular a distância medida pelo sensor ultrassônico
+int calculateDistance(){ 
+  digitalWrite(trigPin, LOW); 
+  delayMicroseconds(10); 
+  // Define o trigPin no estado HIGH por 10 microsegundos
+  digitalWrite(trigPin, HIGH); 
+  delayMicroseconds(0);
+  digitalWrite(trigPin, LOW);
+  
+  duration = pulseIn(echoPin, HIGH); // Lê o echoPin, retorna o tempo de viagem da onda sonora em microssegundos
+  distance = duration * 0.034 / 2;
+  
+  return distance;
+}
+
+// Função para controlar o buzzer
+void controlBuzzer(int distance) {
+  if (distance > 0 && distance <= 200) { // Se a distância for detectada e menor que 200 cm
+    int frequency = map(distance, 0, 200, 2500, 100); // Mapeia a distância para uma frequência entre 2000 Hz (agudo) e 100 Hz (grave)
+    tone(buzzerPin, frequency); // Emite o som no buzzer
+    delay(200); // Adiciona um intervalo de 200 milissegundos com som
+    noTone(buzzerPin); // Para o som após o intervalo
+    delay(1000); // Adiciona um intervalo de 800 milissegundos (2 segundos) sem som
+  } else {
+    noTone(buzzerPin); // Se nenhuma distância for detectada ou estiver fora do alcance, o buzzer para de emitir som
+  }
+}
